@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contenido extra</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  /* Galería sencilla, solo para esta página de contenido extra. */
+  .extra-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: clamp(1rem, 3vw, 1.8rem);
+    margin-top: 2.4rem;
+  }
+  .extra-gallery figure { margin: 0; }
+  .extra-gallery img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: var(--paper-dim);
+  }
+  .extra-gallery figcaption {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" style="max-width: 820px;">
+
+      <!-- ============================================================
+           PLANTILLA DE CONTENIDO EXTRA
+           Edita lo de abajo cuando el libro esté listo: título, texto
+           introductorio, y las imágenes de la galería (sustituye el
+           src="" de cada <img> y escribe el pie de foto si quieres).
+           Esta página no tira de la base de datos: lo que escribas
+           aquí es exactamente lo que se ve.
+           ============================================================ -->
+
+      <p class="hero__eyebrow">Contenido extra del libro</p>
+      <h1>Título del libro</h1>
+      <p class="hero__desc">
+        Escribe aquí un párrafo de presentación: qué va a encontrar el
+        lector que ha escaneado el código — fotos del proceso, material
+        inédito, una nota del autor, lo que tenga sentido para esa obra.
+      </p>
+
+      <div class="extra-gallery">
+        <figure>
+          <img src="" alt="">
+          <figcaption>Pie de foto opcional</figcaption>
+        </figure>
+        <figure>
+          <img src="" alt="">
+          <figcaption>Pie de foto opcional</figcaption>
+        </figure>
+        <figure>
+          <img src="" alt="">
+          <figcaption>Pie de foto opcional</figcaption>
+        </figure>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+  // Usa el mismo nombre/menú que el resto de la web, pero sin marcar
+  // ningún enlace del menú como activo (esta página no está en el menú).
+  renderHeaderFooter(null);
+</script>
+</body>
+</html>

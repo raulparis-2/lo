@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Añadir trabajo musical — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="admin-topbar__brand">Panel de <span>contenido</span></div>
+  <div class="admin-topbar__right">
+    <a href="/" target="_blank">Ver web pública ↗</a>
+    <button class="btn btn--sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <p class="admin-breadcrumb"><a href="/admin/index.html">Panel</a> / <a href="/admin/musica.html">Música</a> / <span id="crumb-title">Añadir</span></p>
+  <h1 class="admin-h1" id="page-title">Añadir trabajo musical</h1>
+  <p class="admin-sub">Los enlaces a plataformas son opcionales: deja en blanco las que no uses.</p>
+
+  <form class="admin-form" id="music-form">
+    <div class="field">
+      <label>Imagen / portada</label>
+      <div class="image-upload">
+        <div class="image-upload__preview" id="image-preview"></div>
+        <input type="file" id="image-file" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="title">Título</label>
+      <input type="text" id="title" required>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="year">Año</label>
+        <input type="number" id="year" min="1900" max="2100">
+      </div>
+      <div class="field">
+        <label for="type">Categoría</label>
+        <select id="type">
+          <option value="Discografía propia">Discografía propia</option>
+          <option value="Producción y composición">Producción y composición</option>
+          <option value="B.S.O.">B.S.O.</option>
+          <option value="Sueña cantando">Sueña cantando</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="description">Descripción</label>
+      <textarea id="description"></textarea>
+    </div>
+
+    <fieldset>
+      <div class="field-hint">Enlaces externos (opcionales)</div>
+      <div class="field">
+        <label for="spotify_url">Spotify</label>
+        <input type="url" id="spotify_url" placeholder="https://open.spotify.com/...">
+      </div>
+      <div class="field">
+        <label for="youtube_url">YouTube</label>
+        <input type="url" id="youtube_url" placeholder="https://youtube.com/...">
+      </div>
+      <div class="field">
+        <label for="soundcloud_url">SoundCloud</label>
+        <input type="url" id="soundcloud_url" placeholder="https://soundcloud.com/...">
+      </div>
+      <div class="field">
+        <label for="apple_music_url">Apple Music</label>
+        <input type="url" id="apple_music_url" placeholder="https://music.apple.com/...">
+      </div>
+      <div class="field">
+        <label for="other_url">Otro enlace</label>
+        <input type="url" id="other_url">
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label><input type="checkbox" id="visible" checked style="width:auto;display:inline-block;margin-right:0.4rem;">Visible en la web pública</label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Guardar</button>
+      <a class="btn" href="/admin/musica.html">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/admin/auth-guard.js"></script>
+<script>
+let editingId = null;
+let currentImagePath = null;
+
+const typeSelect = document.getElementById("type");
+
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+
+  editingId = qs("id");
+  if (editingId) {
+    document.getElementById("page-title").textContent = "Editar trabajo musical";
+    document.getElementById("crumb-title").textContent = "Editar";
+    document.title = "Editar trabajo musical — Panel";
+
+    const { data: m, error } = await window.supabaseClient.from("music").select("*").eq("id", editingId).single();
+    if (error || !m) { showToast("No se pudo cargar.", true); return; }
+
+    document.getElementById("title").value = m.title || "";
+    document.getElementById("year").value = m.year || "";
+    if (m.type) typeSelect.value = m.type;
+    document.getElementById("description").value = m.description || "";
+    document.getElementById("spotify_url").value = m.spotify_url || "";
+    document.getElementById("youtube_url").value = m.youtube_url || "";
+    document.getElementById("soundcloud_url").value = m.soundcloud_url || "";
+    document.getElementById("apple_music_url").value = m.apple_music_url || "";
+    document.getElementById("other_url").value = m.other_url || "";
+    document.getElementById("visible").checked = m.visible;
+    currentImagePath = m.image_url;
+    if (m.image_url) {
+      document.getElementById("image-preview").innerHTML = `<img src="${publicMediaUrl(m.image_url)}" alt="">`;
+    }
+  }
+})();
+
+document.getElementById("image-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById("image-preview").innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+});
+
+document.getElementById("music-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Guardando…";
+
+  try {
+    const file = document.getElementById("image-file").files[0];
+    let imagePath = currentImagePath;
+    if (file) imagePath = await uploadImage(file, "music");
+
+    const title = document.getElementById("title").value.trim();
+    const typeValue = typeSelect.value;
+
+    const payload = {
+      title,
+      year: document.getElementById("year").value ? parseInt(document.getElementById("year").value) : null,
+      type: typeValue || null,
+      description: document.getElementById("description").value.trim() || null,
+      spotify_url: document.getElementById("spotify_url").value.trim() || null,
+      youtube_url: document.getElementById("youtube_url").value.trim() || null,
+      soundcloud_url: document.getElementById("soundcloud_url").value.trim() || null,
+      apple_music_url: document.getElementById("apple_music_url").value.trim() || null,
+      other_url: document.getElementById("other_url").value.trim() || null,
+      visible: document.getElementById("visible").checked,
+      image_url: imagePath
+    };
+
+    if (editingId) {
+      const { error } = await window.supabaseClient.from("music").update(payload).eq("id", editingId);
+      if (error) throw error;
+      showToast("Trabajo actualizado.");
+    } else {
+      payload.slug = await uniqueSlug("music", title);
+      const { error } = await window.supabaseClient.from("music").insert(payload);
+      if (error) throw error;
+      showToast("Trabajo guardado.");
+    }
+    setTimeout(() => { window.location.href = "/admin/musica.html"; }, 600);
+  } catch (err) {
+    showToast("Error: " + err.message, true);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Guardar";
+  }
+});
+</script>
+</body>
+</html>

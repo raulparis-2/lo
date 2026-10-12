@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publicaciones — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="admin-topbar__brand">Panel de <span>contenido</span></div>
+  <div class="admin-topbar__right">
+    <a href="/" target="_blank">Ver web pública ↗</a>
+    <button class="btn btn--sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <p class="admin-breadcrumb"><a href="/admin/index.html">Panel</a> / Publicaciones</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <h1 class="admin-h1" style="margin-bottom:0;">Publicaciones</h1>
+    <a class="btn btn--primary" href="/admin/publicacion-editor.html">+ Nueva publicación</a>
+  </div>
+  <p class="admin-sub">Publicadas y borradores.</p>
+  <div id="list"><p class="skeleton">Cargando…</p></div>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/admin/auth-guard.js"></script>
+<script>
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+  await loadList();
+})();
+
+async function loadList() {
+  const { data: posts, error } = await window.supabaseClient
+    .from("posts")
+    .select("*")
+    .order("post_date", { ascending: false });
+
+  const list = document.getElementById("list");
+  if (error) { list.innerHTML = `<p class="empty-state">Error al cargar: ${escapeHtml(error.message)}</p>`; return; }
+  if (!posts || posts.length === 0) {
+    list.innerHTML = `<p class="empty-state">Todavía no has escrito ninguna publicación.</p>`;
+    return;
+  }
+
+  list.innerHTML = posts.map(p => `
+    <div class="item-row">
+      <div class="item-row__thumb">${p.image_url ? `<img src="${publicMediaUrl(p.image_url)}" alt="">` : ""}</div>
+      <div class="item-row__body">
+        <div class="item-row__title">${escapeHtml(p.title)}
+          <span class="item-row__badge ${p.published ? "is-live" : ""}">${p.published ? "Publicada" : "Borrador"}</span>
+        </div>
+        <div class="item-row__meta">${formatDate(p.post_date)}</div>
+      </div>
+      <div class="item-row__actions">
+        <a class="btn btn--sm" href="/admin/publicacion-editor.html?id=${p.id}">Editar</a>
+        <button class="btn btn--sm btn--danger" data-delete="${p.id}">Eliminar</button>
+      </div>
+    </div>`).join("");
+
+  list.querySelectorAll("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar esta publicación?")) return;
+      const { error } = await window.supabaseClient.from("posts").delete().eq("id", btn.dataset.delete);
+      if (error) { showToast("No se pudo eliminar.", true); return; }
+      showToast("Publicación eliminada.");
+      loadList();
+    });
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre mí y configuración — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="admin-topbar__brand">Panel de <span>contenido</span></div>
+  <div class="admin-topbar__right">
+    <a href="/" target="_blank">Ver web pública ↗</a>
+    <button class="btn btn--sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <p class="admin-breadcrumb"><a href="/admin/index.html">Panel</a> / Sobre mí y configuración</p>
+  <h1 class="admin-h1">Sobre mí y configuración</h1>
+  <p class="admin-sub">Estos datos alimentan la portada, la página "Sobre mí", el pie de página y el contacto de toda la web.</p>
+
+  <form class="admin-form" id="profile-form" style="max-width:640px;">
+    <div class="field">
+      <label for="name">Nombre / marca que aparece en la web</label>
+      <input type="text" id="name" required placeholder="Ej: LANGA">
+      <p class="field-hint">Aparece en la cabecera con tratamiento de logotipo (mayúsculas, espaciado).</p>
+    </div>
+
+    <div class="field">
+      <label for="description">Descripción principal (frase corta de portada)</label>
+      <textarea id="description" placeholder="Música y literatura. Una frase breve para la página de inicio."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Imagen principal (portada / inicio)</label>
+      <div class="image-upload">
+        <div class="image-upload__preview" id="main-image-preview"></div>
+        <input type="file" id="main-image-file" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Fotografía (página "Sobre mí")</label>
+      <div class="image-upload">
+        <div class="image-upload__preview" id="photo-preview"></div>
+        <input type="file" id="photo-file" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="bio">Biografía</label>
+      <textarea id="bio" style="min-height:140px;"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="trajectory">Trayectoria</label>
+      <textarea id="trajectory" style="min-height:120px;"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="additional_info">Información adicional</label>
+      <textarea id="additional_info"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="email">Email de contacto</label>
+      <input type="email" id="email">
+    </div>
+
+    <fieldset>
+      <div class="field-hint">La Caja Mom</div>
+      <div class="field">
+        <label>Imagen principal</label>
+        <div class="image-upload">
+          <div class="image-upload__preview" id="caja-mom-image-preview"></div>
+          <input type="file" id="caja_mom_image_file" accept="image/*">
+        </div>
+      </div>
+      <div class="field">
+        <label for="caja_mom_text">Texto de presentación</label>
+        <textarea id="caja_mom_text"></textarea>
+      </div>
+      <div class="field">
+        <label for="caja_mom_video_url">Enlace al vídeo</label>
+        <input type="url" id="caja_mom_video_url" placeholder="https://youtube.com/watch?v=...">
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <div class="field-hint">Redes sociales (opcionales)</div>
+      <div class="field">
+        <label for="social_instagram">Instagram</label>
+        <input type="url" id="social_instagram" placeholder="https://instagram.com/...">
+      </div>
+      <div class="field">
+        <label for="social_facebook">Facebook</label>
+        <input type="url" id="social_facebook" placeholder="https://facebook.com/...">
+      </div>
+      <div class="field">
+        <label for="social_twitter">X / Twitter</label>
+        <input type="url" id="social_twitter" placeholder="https://x.com/...">
+      </div>
+      <div class="field">
+        <label for="social_youtube">YouTube (canal personal)</label>
+        <input type="url" id="social_youtube" placeholder="https://youtube.com/...">
+      </div>
+      <div class="field">
+        <label for="social_spotify">Spotify</label>
+        <input type="url" id="social_spotify" placeholder="https://open.spotify.com/...">
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Guardar cambios</button>
+    </div>
+  </form>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/admin/auth-guard.js"></script>
+<script>
+let currentMainImage = null;
+let currentPhoto = null;
+let currentCajaMomImage = null;
+
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+
+  const { data: p, error } = await window.supabaseClient.from("profile").select("*").eq("id", 1).single();
+  if (error || !p) { showToast("No se pudo cargar el perfil.", true); return; }
+
+  document.getElementById("name").value = p.name || "";
+  document.getElementById("description").value = p.description || "";
+  document.getElementById("bio").value = p.bio || "";
+  document.getElementById("trajectory").value = p.trajectory || "";
+  document.getElementById("additional_info").value = p.additional_info || "";
+  document.getElementById("email").value = p.email || "";
+  document.getElementById("caja_mom_text").value = p.caja_mom_text || "";
+  document.getElementById("caja_mom_video_url").value = p.caja_mom_video_url || "";
+
+  const social = p.social_links || {};
+  document.getElementById("social_instagram").value = social.instagram || "";
+  document.getElementById("social_facebook").value = social.facebook || "";
+  document.getElementById("social_twitter").value = social.twitter || "";
+  document.getElementById("social_youtube").value = social.youtube || "";
+  document.getElementById("social_spotify").value = social.spotify || "";
+
+  currentMainImage = p.main_image_url;
+  currentPhoto = p.photo_url;
+  currentCajaMomImage = p.caja_mom_image_url;
+  if (p.main_image_url) document.getElementById("main-image-preview").innerHTML = `<img src="${publicMediaUrl(p.main_image_url)}" alt="">`;
+  if (p.photo_url) document.getElementById("photo-preview").innerHTML = `<img src="${publicMediaUrl(p.photo_url)}" alt="">`;
+  if (p.caja_mom_image_url) document.getElementById("caja-mom-image-preview").innerHTML = `<img src="${publicMediaUrl(p.caja_mom_image_url)}" alt="">`;
+})();
+
+document.getElementById("main-image-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) document.getElementById("main-image-preview").innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+});
+document.getElementById("photo-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) document.getElementById("photo-preview").innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+});
+document.getElementById("caja_mom_image_file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) document.getElementById("caja-mom-image-preview").innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+});
+
+document.getElementById("profile-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector("button[type=submit]");
+  btn.disabled = true;
+  btn.textContent = "Guardando…";
+
+  try {
+    const mainFile = document.getElementById("main-image-file").files[0];
+    const photoFile = document.getElementById("photo-file").files[0];
+    const cajaMomFile = document.getElementById("caja_mom_image_file").files[0];
+    let mainImagePath = currentMainImage;
+    let photoPath = currentPhoto;
+    let cajaMomImagePath = currentCajaMomImage;
+    if (mainFile) mainImagePath = await uploadImage(mainFile, "profile");
+    if (photoFile) photoPath = await uploadImage(photoFile, "profile");
+    if (cajaMomFile) cajaMomImagePath = await uploadImage(cajaMomFile, "caja-mom");
+
+    const payload = {
+      name: document.getElementById("name").value.trim(),
+      description: document.getElementById("description").value.trim() || null,
+      bio: document.getElementById("bio").value.trim() || null,
+      trajectory: document.getElementById("trajectory").value.trim() || null,
+      additional_info: document.getElementById("additional_info").value.trim() || null,
+      email: document.getElementById("email").value.trim() || null,
+      caja_mom_text: document.getElementById("caja_mom_text").value.trim() || null,
+      caja_mom_video_url: document.getElementById("caja_mom_video_url").value.trim() || null,
+      main_image_url: mainImagePath,
+      photo_url: photoPath,
+      caja_mom_image_url: cajaMomImagePath,
+      social_links: {
+        instagram: document.getElementById("social_instagram").value.trim() || null,
+        facebook: document.getElementById("social_facebook").value.trim() || null,
+        twitter: document.getElementById("social_twitter").value.trim() || null,
+        youtube: document.getElementById("social_youtube").value.trim() || null,
+        spotify: document.getElementById("social_spotify").value.trim() || null
+      }
+    };
+
+    const { error } = await window.supabaseClient.from("profile").update(payload).eq("id", 1);
+    if (error) throw error;
+    showToast("Cambios guardados.");
+  } catch (err) {
+    showToast("Error: " + err.message, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Guardar cambios";
+  }
+});
+</script>
+</body>
+</html>

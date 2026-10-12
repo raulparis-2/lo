@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contacto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container">
+      <h1>Contacto</h1>
+      <div class="contact__grid" style="margin-top:2.5rem;">
+        <form class="form" id="contact-form">
+          <div class="field">
+            <label for="name">Nombre</label>
+            <input type="text" id="name" name="name" required>
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+          </div>
+          <div class="field">
+            <label for="message">Mensaje</label>
+            <textarea id="message" name="message" required></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">Enviar mensaje</button>
+          </div>
+          <p id="form-status" class="field-hint"></p>
+        </form>
+        <div>
+          <div class="about__label">Otras formas de contacto</div>
+          <div id="contact-extra" class="social-list"><p class="skeleton">Cargando…</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("contacto");
+
+  const { data: p } = await window.supabaseClient
+    .from("profile")
+    .select("email, social_links")
+    .eq("id", 1)
+    .single();
+
+  const extra = document.getElementById("contact-extra");
+  const links = [];
+  if (p?.email) links.push(`<a href="mailto:${escapeHtml(p.email)}">${escapeHtml(p.email)}</a>`);
+  Object.entries(p?.social_links || {}).filter(([, v]) => v).forEach(([k, v]) => {
+    links.push(`<a href="${escapeHtml(v)}" target="_blank" rel="noopener">${escapeHtml(k)}</a>`);
+  });
+  extra.innerHTML = links.length ? links.join("") : `<p class="empty-state" style="padding:0;">Sin datos adicionales todavía.</p>`;
+
+  const form = document.getElementById("contact-form");
+  const status = document.getElementById("form-status");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const destination = p?.email;
+    if (!destination) {
+      status.textContent = "El email de contacto todavía no está configurado.";
+      return;
+    }
+
+    const name = document.getElementById("name").value.trim();
+    const senderEmail = document.getElementById("email").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    const subject = `Mensaje de contacto de ${name} (desde la web)`;
+    const body = `Nombre: ${name}\nEmail: ${senderEmail}\n\n${message}`;
+
+    window.location.href =
+      `mailto:${destination}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    status.textContent = "Se ha abierto tu app de correo con el mensaje listo — solo falta que lo envíes.";
+  });
+})();
+</script>
+</body>
+</html>

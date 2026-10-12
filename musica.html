@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Música</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block" style="padding-bottom:0;">
+    <div class="container">
+      <h1>Música</h1>
+      <p class="hero__desc" style="margin-top:0.6rem;">Elige una categoría para ver los trabajos.</p>
+    </div>
+  </section>
+  <section class="block">
+    <div class="container">
+      <div class="grid-categories" id="category-list"><p class="skeleton">Cargando…</p></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("musica");
+
+  // Categorías fijas de música, siempre visibles aunque todavía
+  // no tengan ningún trabajo añadido.
+  const CATEGORIES = ["Discografía propia", "Producción y composición", "B.S.O.", "Sueña cantando"];
+
+  const { data: music } = await window.supabaseClient
+    .from("music")
+    .select("type")
+    .eq("visible", true);
+
+  const counts = {};
+  (music || []).forEach(m => {
+    const key = m.type && CATEGORIES.includes(m.type.trim()) ? m.type.trim() : null;
+    if (key) counts[key] = (counts[key] || 0) + 1;
+  });
+
+  const el = document.getElementById("category-list");
+  el.innerHTML = CATEGORIES.map(cat => `
+    <a class="category-card" href="/musica-categoria/index.html?tipo=${encodeURIComponent(cat)}">
+      <div class="category-card__title">${escapeHtml(cat)}</div>
+      <div class="category-card__count">${counts[cat] ? `${counts[cat]} trabajo${counts[cat] > 1 ? "s" : ""}` : "Próximamente"}</div>
+    </a>`).join("");
+})();
+</script>
+</body>
+</html>

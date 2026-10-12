@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Publicación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" id="post-detail" style="max-width:760px;">
+      <p class="skeleton">Cargando…</p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("publicaciones");
+  const slug = qs("slug");
+  const el = document.getElementById("post-detail");
+
+  if (!slug) {
+    el.innerHTML = `<p class="empty-state">Publicación no encontrada.</p>`;
+    return;
+  }
+
+  const { data: post } = await window.supabaseClient
+    .from("posts")
+    .select("*")
+    .eq("slug", slug)
+    .eq("published", true)
+    .maybeSingle();
+
+  if (!post) {
+    el.innerHTML = `<a class="back-link" href="/publicaciones.html">&larr; Volver a publicaciones</a><p class="empty-state">Esta publicación no está disponible.</p>`;
+    return;
+  }
+
+  document.title = post.title;
+
+  const imageHtml = post.image_url
+    ? `<div class="post-card__image" style="aspect-ratio:16/9;margin-bottom:2rem;"><img src="${publicMediaUrl(post.image_url)}" alt="${escapeHtml(post.title)}"></div>`
+    : "";
+
+  el.innerHTML = `
+    <a class="back-link" href="/publicaciones.html">&larr; Volver a publicaciones</a>
+    <div class="detail__meta">${formatDate(post.post_date)}</div>
+    <h1>${escapeHtml(post.title)}</h1>
+    ${imageHtml}
+    <div class="post-content" id="post-content"></div>`;
+
+  document.getElementById("post-content").innerHTML = post.content || "";
+})();
+</script>
+</body>
+</html>

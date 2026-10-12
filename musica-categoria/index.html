@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Música</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" id="category-detail">
+      <p class="skeleton">Cargando…</p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("musica");
+  const tipo = qs("tipo");
+  const el = document.getElementById("category-detail");
+
+  if (!tipo) {
+    el.innerHTML = `<p class="empty-state">Categoría no encontrada.</p>`;
+    return;
+  }
+
+  document.title = `${tipo} — Música`;
+
+  const { data: music } = await window.supabaseClient
+    .from("music")
+    .select("*")
+    .eq("visible", true)
+    .eq("type", tipo)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  const backLink = `<a class="back-link" href="/musica.html">&larr; Volver a Música</a>`;
+
+  if (!music || music.length === 0) {
+    el.innerHTML = `${backLink}<h1>${escapeHtml(tipo)}</h1><p class="empty-state">Todavía no hay trabajos en esta categoría.</p>`;
+    return;
+  }
+
+  el.innerHTML = `
+    ${backLink}
+    <h1>${escapeHtml(tipo)}</h1>
+    <div class="grid-music" style="margin-top:2rem;">
+      ${music.map(renderMusicCard).join("")}
+    </div>`;
+})();
+
+function renderMusicCard(m) {
+  return `
+    <div class="music-card">
+      <div class="music-card__art">
+        ${m.image_url ? `<img src="${publicMediaUrl(m.image_url)}" alt="${escapeHtml(m.title)}" loading="lazy">` : ""}
+      </div>
+      <div>
+        <div class="music-card__title">${escapeHtml(m.title)}</div>
+        <div class="music-card__year">${m.year || ""}</div>
+        ${m.description ? `<p style="font-size:0.88rem;color:var(--ink-soft);margin:0.4rem 0;">${escapeHtml(m.description)}</p>` : ""}
+        <div class="music-card__links">
+          ${linkIfPresent(m.spotify_url, "Spotify")}
+          ${linkIfPresent(m.youtube_url, "YouTube")}
+          ${linkIfPresent(m.soundcloud_url, "SoundCloud")}
+          ${linkIfPresent(m.apple_music_url, "Apple Music")}
+          ${linkIfPresent(m.other_url, "Enlace")}
+        </div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>

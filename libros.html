@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Literatura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block" style="padding-bottom:0;">
+    <div class="container">
+      <h1>Literatura</h1>
+    </div>
+  </section>
+  <section class="block">
+    <div class="container">
+      <div class="grid-books" id="books-list"><p class="skeleton">Cargando…</p></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("libros");
+  const { data: books } = await window.supabaseClient
+    .from("books")
+    .select("title, subtitle, year, cover_url, slug")
+    .eq("visible", true)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  const el = document.getElementById("books-list");
+  if (!books || books.length === 0) {
+    el.innerHTML = `<p class="empty-state">Todavía no hay libros publicados.</p>`;
+    return;
+  }
+  el.innerHTML = books.map(b => `
+    <a class="book-card" href="/libro/index.html?slug=${encodeURIComponent(b.slug)}">
+      <div class="book-card__cover">
+        ${b.cover_url ? `<img src="${publicMediaUrl(b.cover_url)}" alt="${escapeHtml(b.title)}" loading="lazy">` : ""}
+      </div>
+      <div class="book-card__title">${escapeHtml(b.title)}</div>
+      ${b.subtitle ? `<div class="book-card__subtitle">${escapeHtml(b.subtitle)}</div>` : ""}
+      ${b.year ? `<div class="book-card__year">${b.year}</div>` : ""}
+    </a>`).join("");
+})();
+</script>
+</body>
+</html>

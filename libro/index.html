@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Literatura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" id="book-detail">
+      <p class="skeleton">Cargando…</p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("libros");
+  const slug = qs("slug");
+  const el = document.getElementById("book-detail");
+
+  if (!slug) {
+    el.innerHTML = `<p class="empty-state">Libro no encontrado.</p>`;
+    return;
+  }
+
+  const { data: book } = await window.supabaseClient
+    .from("books")
+    .select("*")
+    .eq("slug", slug)
+    .eq("visible", true)
+    .maybeSingle();
+
+  if (!book) {
+    el.innerHTML = `<a class="back-link" href="/libros.html">&larr; Volver a literatura</a><p class="empty-state">Este libro no está disponible.</p>`;
+    return;
+  }
+
+  document.title = book.title;
+
+  el.innerHTML = `
+    <a class="back-link" href="/libros.html">&larr; Volver a literatura</a>
+    <div class="detail__grid">
+      <div class="detail__cover">
+        ${book.cover_url ? `<img src="${publicMediaUrl(book.cover_url)}" alt="${escapeHtml(book.title)}">` : ""}
+      </div>
+      <div>
+        <h1>${escapeHtml(book.title)}</h1>
+        ${book.subtitle ? `<p class="hero__desc" style="margin-top:0;">${escapeHtml(book.subtitle)}</p>` : ""}
+        ${book.year ? `<div class="detail__meta">${book.year}</div>` : ""}
+        <div class="detail__body">${escapeHtml(book.full_description || book.short_description || "")}</div>
+        ${book.amazon_link ? `<a class="btn btn--primary" href="${escapeHtml(book.amazon_link)}" target="_blank" rel="noopener">Comprar en Amazon</a>` : ""}
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Música — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="admin-topbar__brand">Panel de <span>contenido</span></div>
+  <div class="admin-topbar__right">
+    <a href="/" target="_blank">Ver web pública ↗</a>
+    <button class="btn btn--sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <p class="admin-breadcrumb"><a href="/admin/index.html">Panel</a> / Música</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <h1 class="admin-h1" style="margin-bottom:0;">Música</h1>
+    <a class="btn btn--primary" href="/admin/musica-editor.html">+ Añadir trabajo</a>
+  </div>
+  <p class="admin-sub">
+    Todos tus trabajos musicales, publicados y ocultos. En la web, cada
+    uno aparece dentro de su categoría (<strong>Discografía propia</strong>,
+    <strong>Producción y composición</strong>, <strong>B.S.O.</strong> o
+    <strong>Sueña cantando</strong>) — elígela en el desplegable
+    "Categoría" al añadir o editar cada trabajo.
+  </p>
+  <div id="list"><p class="skeleton">Cargando…</p></div>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/admin/auth-guard.js"></script>
+<script>
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+  await loadList();
+})();
+
+async function loadList() {
+  const { data: items, error } = await window.supabaseClient
+    .from("music")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  const list = document.getElementById("list");
+  if (error) { list.innerHTML = `<p class="empty-state">Error al cargar: ${escapeHtml(error.message)}</p>`; return; }
+  if (!items || items.length === 0) {
+    list.innerHTML = `<p class="empty-state">Todavía no has añadido ningún trabajo musical.</p>`;
+    return;
+  }
+
+  list.innerHTML = items.map(m => `
+    <div class="item-row">
+      <div class="item-row__thumb">${m.image_url ? `<img src="${publicMediaUrl(m.image_url)}" alt="">` : ""}</div>
+      <div class="item-row__body">
+        <div class="item-row__title">${escapeHtml(m.title)}
+          <span class="item-row__badge ${m.visible ? "is-live" : ""}">${m.visible ? "Visible" : "Oculto"}</span>
+        </div>
+        <div class="item-row__meta">${escapeHtml(m.type || "")} ${m.year ? "· " + m.year : ""}</div>
+      </div>
+      <div class="item-row__actions">
+        <a class="btn btn--sm" href="/admin/musica-editor.html?id=${m.id}">Editar</a>
+        <button class="btn btn--sm" data-toggle="${m.id}" data-visible="${m.visible}">${m.visible ? "Ocultar" : "Mostrar"}</button>
+        <button class="btn btn--sm btn--danger" data-delete="${m.id}">Eliminar</button>
+      </div>
+    </div>`).join("");
+
+  list.querySelectorAll("[data-toggle]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.toggle;
+      const newVisible = btn.dataset.visible !== "true";
+      const { error } = await window.supabaseClient.from("music").update({ visible: newVisible }).eq("id", id);
+      if (error) { showToast("No se pudo actualizar.", true); return; }
+      showToast(newVisible ? "Trabajo visible." : "Trabajo oculto.");
+      loadList();
+    });
+  });
+
+  list.querySelectorAll("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar este trabajo musical?")) return;
+      const { error } = await window.supabaseClient.from("music").delete().eq("id", btn.dataset.delete);
+      if (error) { showToast("No se pudo eliminar.", true); return; }
+      showToast("Trabajo eliminado.");
+      loadList();
+    });
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre mí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" id="about-content">
+      <p class="skeleton">Cargando…</p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("sobre-mi");
+  const { data: p } = await window.supabaseClient
+    .from("profile")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  const el = document.getElementById("about-content");
+  if (!p) {
+    el.innerHTML = `<p class="empty-state">Contenido no disponible.</p>`;
+    return;
+  }
+
+  document.title = `Sobre mí — ${p.name || ""}`;
+
+  const social = Object.entries(p.social_links || {}).filter(([, v]) => v);
+
+  el.innerHTML = `
+    <h1>Sobre mí</h1>
+    <div class="about__grid" style="margin-top:2rem;">
+      <div class="about__photo">
+        ${p.photo_url ? `<img src="${publicMediaUrl(p.photo_url)}" alt="${escapeHtml(p.name || "")}">` : ""}
+      </div>
+      <div>
+        <div class="about__section">
+          <div class="about__label">Biografía</div>
+          <div class="detail__body" style="margin:0;">${escapeHtml(p.bio || "")}</div>
+        </div>
+        ${p.trajectory ? `
+        <div class="about__section">
+          <div class="about__label">Trayectoria</div>
+          <div class="detail__body" style="margin:0;">${escapeHtml(p.trajectory)}</div>
+        </div>` : ""}
+        ${p.additional_info ? `
+        <div class="about__section">
+          <div class="about__label">Más información</div>
+          <div class="detail__body" style="margin:0;">${escapeHtml(p.additional_info)}</div>
+        </div>` : ""}
+        ${social.length ? `
+        <div class="about__section">
+          <div class="about__label">Redes</div>
+          <div class="social-list">
+            ${social.map(([k, v]) => `<a href="${escapeHtml(v)}" target="_blank" rel="noopener">${escapeHtml(k)}</a>`).join("")}
+          </div>
+        </div>` : ""}
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>

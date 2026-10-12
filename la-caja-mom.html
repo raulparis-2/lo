@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Caja Mom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="block">
+    <div class="container" id="caja-mom-content">
+      <p class="skeleton">Cargando…</p>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script>
+(async function () {
+  await renderHeaderFooter("caja-mom");
+
+  const { data: p } = await window.supabaseClient
+    .from("profile")
+    .select("caja_mom_text, caja_mom_video_url, caja_mom_image_url")
+    .eq("id", 1)
+    .single();
+
+  const el = document.getElementById("caja-mom-content");
+
+  el.innerHTML = `
+    <h1>La Caja Mom</h1>
+    <div class="detail__grid" style="margin-top:2rem;">
+      <div class="detail__cover">
+        ${p?.caja_mom_image_url ? `<img src="${publicMediaUrl(p.caja_mom_image_url)}" alt="La Caja Mom">` : ""}
+      </div>
+      <div>
+        <div class="detail__body" style="margin-top:0;">${escapeHtml(p?.caja_mom_text || "")}</div>
+        ${p?.caja_mom_video_url ? `<a class="btn btn--primary" href="${escapeHtml(p.caja_mom_video_url)}" target="_blank" rel="noopener">Ver vídeo</a>` : ""}
+      </div>
+    </div>`;
+})();
+</script>
+</body>
+</html>

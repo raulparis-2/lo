@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Añadir obra — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="admin-body">
+
+<div class="admin-topbar">
+  <div class="admin-topbar__brand">Panel de <span>contenido</span></div>
+  <div class="admin-topbar__right">
+    <a href="/" target="_blank">Ver web pública ↗</a>
+    <button class="btn btn--sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<div class="admin-shell">
+  <p class="admin-breadcrumb"><a href="/admin/index.html">Panel</a> / <a href="/admin/libros.html">Literatura</a> / <span id="crumb-title">Añadir</span></p>
+  <h1 class="admin-h1" id="page-title">Añadir obra</h1>
+  <p class="admin-sub">Rellena los datos de la obra. La portada se sube directamente desde aquí.</p>
+
+  <form class="admin-form" id="book-form">
+    <div class="field">
+      <label>Portada</label>
+      <div class="image-upload">
+        <div class="image-upload__preview" id="cover-preview"></div>
+        <input type="file" id="cover-file" accept="image/*">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="title">Título</label>
+      <input type="text" id="title" required>
+    </div>
+
+    <div class="field">
+      <label for="subtitle">Subtítulo (opcional)</label>
+      <input type="text" id="subtitle">
+    </div>
+
+    <div class="field">
+      <label for="year">Año</label>
+      <input type="number" id="year" min="1900" max="2100">
+    </div>
+
+    <div class="field">
+      <label for="short_description">Descripción corta</label>
+      <textarea id="short_description" placeholder="Se usa en las tarjetas y listados."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="full_description">Descripción completa</label>
+      <textarea id="full_description" style="min-height:180px;" placeholder="Se usa en la página individual de la obra."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="amazon_link">Enlace de Amazon</label>
+      <input type="url" id="amazon_link" placeholder="https://amazon.es/...">
+    </div>
+
+    <div class="field">
+      <label><input type="checkbox" id="visible" checked style="width:auto;display:inline-block;margin-right:0.4rem;">Visible en la web pública</label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Guardar obra</button>
+      <a class="btn" href="/admin/libros.html">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/admin/auth-guard.js"></script>
+<script>
+let editingId = null;
+let currentCoverPath = null;
+
+(async function () {
+  const user = await requireAuth();
+  if (!user) return;
+
+  editingId = qs("id");
+  if (editingId) {
+    document.getElementById("page-title").textContent = "Editar obra";
+    document.getElementById("crumb-title").textContent = "Editar";
+    document.title = "Editar obra — Panel";
+
+    const { data: book, error } = await window.supabaseClient.from("books").select("*").eq("id", editingId).single();
+    if (error || !book) { showToast("No se pudo cargar la obra.", true); return; }
+
+    document.getElementById("title").value = book.title || "";
+    document.getElementById("subtitle").value = book.subtitle || "";
+    document.getElementById("year").value = book.year || "";
+    document.getElementById("short_description").value = book.short_description || "";
+    document.getElementById("full_description").value = book.full_description || "";
+    document.getElementById("amazon_link").value = book.amazon_link || "";
+    document.getElementById("visible").checked = book.visible;
+    currentCoverPath = book.cover_url;
+    if (book.cover_url) {
+      document.getElementById("cover-preview").innerHTML = `<img src="${publicMediaUrl(book.cover_url)}" alt="">`;
+    }
+  }
+})();
+
+document.getElementById("cover-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById("cover-preview").innerHTML = `<img src="${URL.createObjectURL(file)}" alt="">`;
+});
+
+document.getElementById("book-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const submitBtn = e.target.querySelector("button[type=submit]");
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Guardando…";
+
+  try {
+    const file = document.getElementById("cover-file").files[0];
+    let coverPath = currentCoverPath;
+    if (file) coverPath = await uploadImage(file, "books");
+
+    const title = document.getElementById("title").value.trim();
+
+    const payload = {
+      title,
+      subtitle: document.getElementById("subtitle").value.trim() || null,
+      year: document.getElementById("year").value ? parseInt(document.getElementById("year").value) : null,
+      short_description: document.getElementById("short_description").value.trim() || null,
+      full_description: document.getElementById("full_description").value.trim() || null,
+      amazon_link: document.getElementById("amazon_link").value.trim() || null,
+      visible: document.getElementById("visible").checked,
+      cover_url: coverPath
+    };
+
+    if (editingId) {
+      const { error } = await window.supabaseClient.from("books").update(payload).eq("id", editingId);
+      if (error) throw error;
+      showToast("Obra actualizada.");
+    } else {
+      payload.slug = await uniqueSlug("books", title);
+      const { error } = await window.supabaseClient.from("books").insert(payload);
+      if (error) throw error;
+      showToast("Obra guardada.");
+    }
+    setTimeout(() => { window.location.href = "/admin/libros.html"; }, 600);
+  } catch (err) {
+    showToast("Error: " + err.message, true);
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Guardar obra";
+  }
+});
+</script>
+</body>
+</html>

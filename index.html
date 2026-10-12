@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inicio</title>
+<meta name="description" content="Escritor y músico — libros, discografía y publicaciones.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@300;400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<main>
+  <section class="hero">
+    <div class="container hero__grid">
+      <div>
+        <p class="hero__eyebrow">Música · Literatura</p>
+        <h1 id="hero-name" class="brand-mark">&nbsp;</h1>
+        <p class="hero__desc" id="hero-desc"></p>
+        <div class="hero__links">
+          <a href="/libros.html">Ver libros</a>
+          <a href="/musica.html">Ver música</a>
+          <a href="/sobre-mi.html">Sobre mí</a>
+          <a href="/contacto.html">Contacto</a>
+        </div>
+      </div>
+      <div class="hero__image">
+        <img id="hero-image" src="" alt="" style="display:none;">
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <div class="block__head">
+        <h2>Libros</h2>
+        <a class="see-all" href="/libros.html">Ver todos</a>
+      </div>
+      <div class="grid-books" id="home-books"><p class="skeleton">Cargando…</p></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="container">
+      <div class="block__head">
+        <h2>Música</h2>
+        <a class="see-all" href="/musica.html">Ver toda</a>
+      </div>
+      <div class="grid-categories" id="home-music"><p class="skeleton">Cargando…</p></div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/helpers.js"></script>
+<script src="/assets/js/public/components.js"></script>
+<script src="/assets/js/public/home.js"></script>
+</body>
+</html>
